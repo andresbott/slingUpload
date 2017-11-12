@@ -1,5 +1,6 @@
  
-# some fs settings
+# some fs settings and ide
+.idea
 .directory
  
 # compiled python code

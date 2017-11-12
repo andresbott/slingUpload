@@ -6,7 +6,7 @@ import sys
 import time
 
 from libs.aemtools import aemtools
-from libs.f import f
+from libs.pyf import pyf
 from libs.jsonfile import jsonfile
 
 currentPath = os.getcwd()
@@ -123,75 +123,42 @@ def setneviroment():
 
 def upload():
     fileList = jsonfile.jsonFile(currentPath + os.sep + uploadList)
-    # fileList.load()
+    fileList.load()
 
-    fileList.createSection("test")
-
-    fileList.createSection(["files","subFiles"])
-    fileList.createSection(["files","subFiles2"])
-    fileList.createSection(["files","subFiles2","subFiles"])
-    fileList.createSection(["dirs","subFiles2"])
-
-    fileList.set("item","something") # done
-    fileList.set("itemsa","something") # done
-    fileList.set("itemsadas","something") # done
-    fileList.set("dsa","something") # done
-    fileList.set("dsads","something") # done
-    fileList.set("item2","something",["dirs"]) #done
-    fileList.set("item2","something","files") # done
-    fileList.set("item3","something",["dirs","subFilesgfdgdf"])
-    fileList.set("item34","something",["dirs","subFilesgfdgdf","subFilesgfdgdf"])
-    fileList.set("item34","Value34",["dirs","subFilesgfdssdgdf","subFilesgfdgdf"])
-    fileList.set("item35","Value35",["dirs","subFilesgfdssdgdf","subFilesgfdgdf"])
-
-    fileList.set("item4",{"s":"b"},["dirs","subFiles2"])
-
-
-
-    fileList.remove("item") # done
-    fileList.remove("test") # done
-    fileList.remove("item34",["dirs","subFilesgfdssdgdf","subFilesgfdgdf"])
-    fileList.remove("subFilesgfdgdf",["dirs","subFilesgfdgdf"])
-
-    print "whole json"
-    print fileList.get()
-    print "not existend string index:"
-    print fileList.get("item")
-    print "string index:"
-    print fileList.get("dsads")
-    print "LIST index return object:"
-    print fileList.get(["dirs","subFilesgfdssdgdf","subFilesgfdgdf"])
-    print "LIST index retunr string :"
-    print fileList.get(["dirs","subFilesgfdssdgdf","subFilesgfdgdf","item35"])
-
-    # print fileList.get("item")
-    # print fileList.get(section = ["item"])
-    # print fileList.get(section = ["files","subFiles2"])
-
-    fileList.write()
-
-    return
     if fileList.fileExists() is False:
         print "* Notice: Empty file list, generating new."
 
-    repositoryPath = f.StringTools(currentPath + os.sep + mainConfig.get("rootFolder"))
+    repositoryPath = pyf.StringTools(currentPath + os.sep + mainConfig.get("rootFolder"))
     n = repositoryPath.countSting()
+
+    # Delete Dirs
+    # ===================================================
+    print "* Updating directories according FS"
+    # newUploadFiles["directories"] = []
+    items = dict(fileList.get("directories"))
+
+    for item in items:
+        myPath = repositoryPath.get() + items[item]["path"]
+        if os.path.isdir(myPath) is False:
+            # need to delete
+            status = aemconnection.deleteNode(items[item]["path"])
+            if status["status"] == "ok":
+                print " - delete:     " + items[item]["path"]
+                fileList.remove(key=["directories",items[item]["path"]])
+            else:
+                print status["text"]
 
     # Create Dirs
     # ===================================================
-    print "* Creating Direcotry structure:"
-    # newUploadFiles["directories"] = []
-
     for root, dirs, files in os.walk(repositoryPath.get()):
-        path = f.StringTools(root)
+        path = pyf.StringTools(root)
         path.stringRemoveLeft(n)
         path.trim()
 
         if path.get() is not "" and path.countSting() > 0:
-            valuein = fileList.getValueIn("path", path.get(),"directories")
-
+            valuein = fileList.get(["directories",path.get()])
             if valuein is not False:
-                print " - unchanged: "+path.get()
+                print " - unchanged:  "+path.get()
             else:
                 status = aemconnection.createDir(path.get())
                 if status["status"] ==  "ok":
@@ -200,20 +167,37 @@ def upload():
                         "path": path.get(),
                         "edittime": timestamp
                     }
-                    fileList.set(value=item, section="directories")
+                    fileList.set(value=item, key=["directories",item["path"]])
                 else:
                     print status["text"]
+
+    # Delete Files
+    # ===================================================
+    print "* Updating Files according FS"
+    # newUploadFiles["directories"] = []
+    items = dict(fileList.get("files"))
+
+    for item in items:
+        myPath = repositoryPath.get() + items[item]["path"]
+        if os.path.isfile(myPath) is False:
+            # need to delete
+            status = aemconnection.deleteNode(items[item]["path"])
+            if status["status"] == "ok":
+                print " - delete:     " + items[item]["path"]
+                fileList.remove(key=["files", items[item]["path"]])
+            elif status["status"] == "notfound":
+                print " - NOT FOUND:     " + items[item]["path"] + "  (updating cache file)"
+                fileList.remove(key=["files", items[item]["path"]])
+            else:
+                print status["text"]
 
 
 
     # Create Files
     # ===================================================
 
-    print "* Uploading Files to Repository:"
-    fileList.createSection("files")
-
     for root, dirs, files in os.walk(repositoryPath.get()):
-        path = f.StringTools(root)
+        path = pyf.StringTools(root)
         path.stringRemoveLeft(n)
         path.trim()
 
@@ -225,8 +209,7 @@ def upload():
                     filepath = path.get() + os.sep +filename
                     localFile = repositoryPath.get() + filepath
 
-                    valuein = fileList.getValueIn("path",filepath,"files")
-
+                    valuein = fileList.get(["files", filepath])
                     if valuein is not False:
                         repoFileTime = int(valuein["edittime"])
                         fsFileTime = int(os.path.getmtime(root + os.sep + filename))
@@ -241,7 +224,7 @@ def upload():
                                     "path": filepath,
                                     "edittime": timestamp
                                 }
-                                fileList.set(value=item, section="files")
+                                fileList.set(value=item, key=["files",item["path"]])
                             else:
                                 print status["text"]
                         else:
@@ -255,7 +238,7 @@ def upload():
                                 "path": filepath,
                                 "edittime": timestamp
                             }
-                            fileList.set(value=item, section="files")
+                            fileList.set(value=item, key=["files", item["path"]])
                         else:
                             print status["text"]
 

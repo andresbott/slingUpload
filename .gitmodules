@@ -1,0 +1,9 @@
+[submodule "libs/jsonfile"]
+	path = libs/jsonfile
+	url = git@github.com:AndresBott/jsonfile.git
+[submodule "libs/pyf"]
+	path = libs/pyf
+	url = git@github.com:AndresBott/pyf.git
+[submodule "libs/aemtools"]
+	path = libs/aemtools
+	url = git@github.com:AndresBott/aemtools.git

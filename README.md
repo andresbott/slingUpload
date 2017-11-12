@@ -16,5 +16,5 @@ the tool is being developed and some / all of the funcionalities may not work at
 ### TODO: write better documentation
 
 # About:
-- Version 0.0.1
+- Version 0.0.2
 
