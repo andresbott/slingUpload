@@ -17,6 +17,7 @@ projectConfigFileDefaults = {
     "user": "admin",
     "pass": "admin",
 }
+verbosity = 1
 mainConfig = jsonfile.jsonFile(currentPath + os.sep + projectConfigFile)
 
 uploadList = ".SlingUploadFileList.json"
@@ -29,11 +30,21 @@ def main(argv):
     # parser.add_argument('upload', metavar='upload',     help='run a backup job with the specified config file')
     group.add_argument("-u", "--upload", action="store_true", help='upload content')
     group.add_argument("-i", "--init", action="store_true", help='init repo')
+
+    vervose = parser.add_mutually_exclusive_group()
+    vervose.add_argument("-v", "--verbose", action="store_true", help='print more details')
+    vervose.add_argument("-q", "--quiet", action="store_true", help="don't print anything " )
     # parser.add_argument("-", "--quiet", action="store_true")
     # parser.add_argument('-restore', metavar='backupFile',   help='run a restore job with the specified backup file', type=argparse.FileType('r'))
     # parser.add_argument('-conffile', metavar='configFile',   help='specify a different restore config file', type=argparse.FileType('r'))
     # parser.add_argument('-restorefile', nargs=2 , metavar=('configFile','backupFile'),     help='run a restore job with the specified config file and the backupfile', type=argparse.FileType('r'))
     args = parser.parse_args()
+
+    global verbosity
+    if args.quiet:
+        verbosity = 0
+    elif args.verbose:
+        verbosity = 2
 
 
     if mainConfig.fileExists():
@@ -121,19 +132,23 @@ def setneviroment():
 
 
 
+
+
 def upload():
     fileList = jsonfile.jsonFile(currentPath + os.sep + uploadList)
     fileList.load()
 
     if fileList.fileExists() is False:
-        print "* Notice: Empty file list, generating new."
+        if verbosity > 0:
+            print "* Notice: Empty file list, generating new."
 
     repositoryPath = pyf.StringTools(currentPath + os.sep + mainConfig.get("rootFolder"))
     n = repositoryPath.countSting()
 
     # Delete Dirs
     # ===================================================
-    print "* Updating directories according FS"
+    if verbosity > 0:
+        print "* Updating directories according FS"
     # newUploadFiles["directories"] = []
     items = dict(fileList.get("directories"))
 
@@ -143,10 +158,12 @@ def upload():
             # need to delete
             status = aemconnection.deleteNode(items[item]["path"])
             if status["status"] == "ok":
-                print " - delete:     " + items[item]["path"]
+                if verbosity > 0:
+                    print " - delete:     " + items[item]["path"]
                 fileList.remove(key=["directories",items[item]["path"]])
             else:
-                print status["text"]
+                if verbosity > 0:
+                    print status["text"]
 
     # Create Dirs
     # ===================================================
@@ -158,22 +175,26 @@ def upload():
         if path.get() is not "" and path.countSting() > 0:
             valuein = fileList.get(["directories",path.get()])
             if valuein is not False:
-                print " - unchanged:  "+path.get()
+                if verbosity > 1:
+                    print " - unchanged:  "+path.get()
             else:
                 status = aemconnection.createDir(path.get())
                 if status["status"] ==  "ok":
-                    print " - created:"+status["text"]
+                    if verbosity > 0:
+                        print " - created:"+status["text"]
                     item = {
                         "path": path.get(),
                         "edittime": timestamp
                     }
                     fileList.set(value=item, key=["directories",item["path"]])
                 else:
-                    print status["text"]
+                    if verbosity > 0:
+                        print status["text"]
 
     # Delete Files
     # ===================================================
-    print "* Updating Files according FS"
+    if verbosity > 0:
+        print "* Updating Files according FS"
     # newUploadFiles["directories"] = []
     items = dict(fileList.get("files"))
 
@@ -183,13 +204,16 @@ def upload():
             # need to delete
             status = aemconnection.deleteNode(items[item]["path"])
             if status["status"] == "ok":
-                print " - delete:     " + items[item]["path"]
+                if verbosity > 0:
+                    print " - delete:     " + items[item]["path"]
                 fileList.remove(key=["files", items[item]["path"]])
             elif status["status"] == "notfound":
-                print " - NOT FOUND:     " + items[item]["path"] + "  (updating cache file)"
+                if verbosity > 1:
+                    print " - NOT FOUND:     " + items[item]["path"] + "  (updating cache file)"
                 fileList.remove(key=["files", items[item]["path"]])
             else:
-                print status["text"]
+                if verbosity > 0:
+                    print status["text"]
 
 
 
@@ -219,28 +243,33 @@ def upload():
                             # if FS time bigger (newer) we need to overwrite the Repo file
                             status = aemconnection.uploadFile(localFile, filepath)
                             if status["status"] == "ok":
-                                print " - updated: " + status["text"]
+                                if verbosity > 0:
+                                    print " - updated: " + status["text"]
                                 item = {
                                     "path": filepath,
                                     "edittime": timestamp
                                 }
                                 fileList.set(value=item, key=["files",item["path"]])
                             else:
-                                print status["text"]
+                                if verbosity > 0:
+                                    print status["text"]
                         else:
-                            print " - unchanged: " + filepath
+                            if verbosity > 1:
+                                print " - unchanged: " + filepath
 
                     else:
                         status = aemconnection.uploadFile(localFile,filepath)
                         if status["status"] ==  "ok":
-                            print " - created: "+status["text"]
+                            if verbosity > 0:
+                                print " - created: "+status["text"]
                             item = {
                                 "path": filepath,
                                 "edittime": timestamp
                             }
                             fileList.set(value=item, key=["files", item["path"]])
                         else:
-                            print status["text"]
+                            if verbosity > 0:
+                                print status["text"]
 
 
     # Write changes to disk
