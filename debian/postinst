@@ -1,0 +1,27 @@
+#!/bin/bash
+# postinst script
+#
+#
+
+
+
+## declare an array variable
+arr=(
+"/usr/lib/python2.7/libs/aemtools/aemtools.py"
+"/usr/lib/python2.7/libs/aemtools/jsonfile.py"
+"/usr/lib/python2.7/libs/aemtools/pyf.py"
+"/usr/local/bin/slingUpload"
+)
+
+## now loop through the above array
+for i in "${arr[@]}"
+do
+   echo "$i"
+    chown root:root "$i"
+    chmod 755 "$i"
+done
+
+
+
+
+

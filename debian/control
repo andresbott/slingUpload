@@ -1,0 +1,10 @@
+Package: slingUpload
+Version: 0.0.2
+Maintainer: Andres Bott <contact@andresbott.com>
+Homepage: https://github.com/AndresBott/slingUpload
+Priority: optional
+Depends: 
+Recommends: 
+Architecture: all
+Description: Utility to upload content to a sling / Aem content Repository
+ Utility to upload content to a sling / Aem content Repository
