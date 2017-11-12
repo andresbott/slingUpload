@@ -1,0 +1,6 @@
+ 
+# some fs settings
+.directory
+ 
+# compiled python code
+*.pyc
