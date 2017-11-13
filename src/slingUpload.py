@@ -150,7 +150,7 @@ def upload():
     if verbosity > 0:
         print "* Updating directories according FS"
     # newUploadFiles["directories"] = []
-    items = dict(fileList.get("directories"))
+    items = dict(fileList.get("directories",{}))
 
     for item in items:
         myPath = repositoryPath.get() + items[item]["path"]
@@ -196,7 +196,7 @@ def upload():
     if verbosity > 0:
         print "* Updating Files according FS"
     # newUploadFiles["directories"] = []
-    items = dict(fileList.get("files"))
+    items = dict(fileList.get("files",{}))
 
     for item in items:
         myPath = repositoryPath.get() + items[item]["path"]
