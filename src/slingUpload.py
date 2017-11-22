@@ -67,7 +67,7 @@ def main(argv):
             init()
 
         else:
-            print "not Iit"
+            print "not Init"
             parser.print_help()
             sys.exit(1)
 
